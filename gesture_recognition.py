@@ -4,7 +4,6 @@ import mediapipe as mp
 import cv2
 import time
 import os
-import subprocess
 import argparse
 
 # Argument Parsing
@@ -31,12 +30,37 @@ def print_result(result, output_image, timestamp_ms):
     for gesture_list in result.gestures:
       for gesture in gesture_list:
         print(f"{gesture.category_name}")
-        if gesture.category_name == "Pointing_Up":
-          detected = True
-          if not terminal_opened:
-            terminal_opened = True
-            #os.system('ptyxis -s') 
-            os.system('firefox https://www.youtube.com/')
+        detected = True
+        match gesture.category_name:
+            case "Pointing_Up":
+              if not terminal_opened:
+                terminal_opened = True
+                os.system('firefox https://www.youtube.com/')
+            
+            case "Open_Palm":
+              ...  
+
+            case "Closed_Fist":
+              ...
+
+            case "Thumb_Up":
+              ...
+
+            case "Thumb_Down":
+              ...
+
+            case "ILoveYou":
+              if not terminal_opened:
+                terminal_opened = True
+                os.system('firefox https://www.crunchyroll.com/discover')
+            
+            case "Victory":
+              cv2.destroyAllWindows()
+              exit()
+              return
+
+            case "None":
+              ...
 
   if not detected:
     terminal_opened = False
@@ -97,4 +121,4 @@ if __name__ == "__main__":
 
   else:
     print("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args
-    quit
+    quit()

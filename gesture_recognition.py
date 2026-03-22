@@ -19,10 +19,12 @@ VisionRunningMode        = mp.tasks.vision.RunningMode
 model_path = "gesture_recognizer.task"
 image_path = "photo_from_2026_03_21_22_51_51.094174.jpeg"
 
+# Flags
+running         = True 
 terminal_opened = False
 
 def print_result(result, output_image, timestamp_ms):
-  global terminal_opened
+  global terminal_opened, running
 
   detected = False
 
@@ -30,9 +32,11 @@ def print_result(result, output_image, timestamp_ms):
     for gesture_list in result.gestures:
       for gesture in gesture_list:
         print(f"{gesture.category_name}")
-        detected = True
+        
         match gesture.category_name:
+            
             case "Pointing_Up":
+              detected = True
               if not terminal_opened:
                 terminal_opened = True
                 os.system('firefox https://www.youtube.com/')
@@ -51,12 +55,13 @@ def print_result(result, output_image, timestamp_ms):
 
             case "ILoveYou":
               if not terminal_opened:
+                detected = True
                 terminal_opened = True
                 os.system('firefox https://www.crunchyroll.com/discover')
             
             case "Victory":
-              cv2.destroyAllWindows()
-              exit()
+              print("Exiting program via gesture...")
+              running = False
               return
 
             case "None":
@@ -88,7 +93,7 @@ def livestream_mode():
   cap = cv2.VideoCapture(0)
 
   with GestureRecognizer.create_from_options(options) as recognizer:
-    while cap.isOpened():
+    while cap.isOpened() and running:
       ret, frame = cap.read()
       if not ret:
         break

@@ -22,15 +22,14 @@ def print_result(result, output_image, timestamp_ms):
   detected = False
 
   if result.gestures:
-      for gesture_list in result.gestures:
-          for gesture in gesture_list:
-              print(f"{gesture.category_name}: {gesture.score:.2f}")
-
-              if gesture.category_name == "Pointing_Up":
-                  detected = True
-                  if not terminal_opened:
-                      terminal_opened = True
-                      os.system('ptyxis -s')
+    for gesture_list in result.gestures:
+      for gesture in gesture_list:
+        print(f"{gesture.category_name}: {gesture.score:.2f}")
+        if gesture.category_name == "Pointing_Up":
+          detected = True
+          if not terminal_opened:
+            terminal_opened = True
+            os.system('ptyxis -s') 
 
   if not detected:
     terminal_opened = False

@@ -5,6 +5,12 @@ import cv2
 import time
 import os
 import subprocess
+import argparse
+
+# Argument Parsing
+parser = argparse.ArgumentParser()
+parser.add_argument("--mode", type=str, default="livestream")
+args = parser.parse_args()
 
 BaseOptions              = mp.tasks.BaseOptions
 GestureRecognizer        = mp.tasks.vision.GestureRecognizer
@@ -24,12 +30,13 @@ def print_result(result, output_image, timestamp_ms):
   if result.gestures:
     for gesture_list in result.gestures:
       for gesture in gesture_list:
-        print(f"{gesture.category_name}: {gesture.score:.2f}")
+        print(f"{gesture.category_name}")
         if gesture.category_name == "Pointing_Up":
           detected = True
           if not terminal_opened:
             terminal_opened = True
-            os.system('ptyxis -s') 
+            #os.system('ptyxis -s') 
+            os.system('firefox https://www.youtube.com/')
 
   if not detected:
     terminal_opened = False
@@ -80,7 +87,7 @@ def livestream_mode():
   cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-  vision_running_mode_selection = input("IMAGE or LIVESTREAM?: ")
+  vision_running_mode_selection = args.mode
 
   if vision_running_mode_selection.lower() == "image":
     image_mode()
@@ -89,4 +96,5 @@ if __name__ == "__main__":
     livestream_mode()
 
   else:
+    print("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args
     quit

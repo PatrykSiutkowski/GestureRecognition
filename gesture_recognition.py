@@ -49,12 +49,12 @@ def print_result(result, output_image, timestamp_ms):
             ...
 
           case "Thumb_Up":
-            os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%')
-            os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
+            #os.system('pactl get-sink-volume @DEFAULT_SINK@')
 
           case "Thumb_Down":
-            os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%')
-            os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
+            #os.system('pactl get-sink-volume @DEFAULT_SINK@')
 
           case "ILoveYou":
             if not terminal_opened:
@@ -63,7 +63,7 @@ def print_result(result, output_image, timestamp_ms):
               os.system('firefox https://www.crunchyroll.com/discover')
           
           case "Victory":
-            print("Exiting program via gesture...")
+            print("Exiting program via gesture.")
             running = False
             return
 

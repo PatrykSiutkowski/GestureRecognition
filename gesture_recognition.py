@@ -5,6 +5,7 @@ import cv2
 import time
 import os
 import argparse
+import subprocess
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
@@ -35,37 +36,41 @@ def print_result(result, output_image, timestamp_ms):
         
         match gesture.category_name:
             
-            case "Pointing_Up":
+          case "Pointing_Up":
+            detected = True
+            if not terminal_opened:
+              terminal_opened = True
+              os.system('firefox https://www.youtube.com/')
+          
+          case "Open_Palm":
+            ...  
+
+          case "Closed_Fist":
+            ...
+
+          case "Thumb_Up":
+            os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%')
+            os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            #os.system('amixer set Master 5%+')
+
+          case "Thumb_Down":
+            os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%')
+            os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            #os.system('amixer set Master 5%+')
+
+          case "ILoveYou":
+            if not terminal_opened:
               detected = True
-              if not terminal_opened:
-                terminal_opened = True
-                os.system('firefox https://www.youtube.com/')
-            
-            case "Open_Palm":
-              ...  
+              terminal_opened = True
+              os.system('firefox https://www.crunchyroll.com/discover')
+          
+          case "Victory":
+            print("Exiting program via gesture...")
+            running = False
+            return
 
-            case "Closed_Fist":
-              ...
-
-            case "Thumb_Up":
-              ...
-
-            case "Thumb_Down":
-              ...
-
-            case "ILoveYou":
-              if not terminal_opened:
-                detected = True
-                terminal_opened = True
-                os.system('firefox https://www.crunchyroll.com/discover')
-            
-            case "Victory":
-              print("Exiting program via gesture...")
-              running = False
-              return
-
-            case "None":
-              ...
+          case "None":
+            ...
 
   if not detected:
     terminal_opened = False
@@ -126,4 +131,3 @@ if __name__ == "__main__":
 
   else:
     print("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args
-    quit()

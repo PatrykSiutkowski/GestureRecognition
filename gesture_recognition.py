@@ -9,9 +9,8 @@ import subprocess
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", type=str, default="livestream")
-parser.add_argument("--gui" , type=str, default="true")
-parser.add_argument("--help", type=str)
+parser.add_argument("--mode", type=str, default="livestream", help="select if you want to be in livestream or image mode")
+parser.add_argument("--gui" , type=str, default="true", help="select if you want a gui visible for livestream mode")
 args = parser.parse_args()
 
 BaseOptions              = mp.tasks.BaseOptions

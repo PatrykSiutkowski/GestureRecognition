@@ -10,6 +10,8 @@ import subprocess
 # Argument Parsing
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", type=str, default="livestream")
+parser.add_argument("--gui" , type=str, default="true")
+parser.add_argument("--help", type=str)
 args = parser.parse_args()
 
 BaseOptions              = mp.tasks.BaseOptions
@@ -110,7 +112,8 @@ def livestream_mode():
       timestamp_ms = int(time.time() * 1000) # Timestamp required for live mode
       recognizer.recognize_async(mp_image, timestamp_ms)
       
-      cv2.imshow("Gesture Recognition", frame) # Show camera feed
+      if args.gui == "true":
+        cv2.imshow("Gesture Recognition", frame) # Show camera feed
 
       if cv2.waitKey(1) & 0xFF == 27:  # exit using ESC key
         break

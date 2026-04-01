@@ -42,9 +42,9 @@ def print_result(result, output_image, timestamp_ms):
       for gesture in gesture_list:
         print(f"{gesture.category_name}")
         
-        match (gesture.category_name, args.volumebar):
+        match (gesture.category_name, volumebar_bool):
             
-          case ("Pointing_Up", "true" | "false"):
+          case ("Pointing_Up", True | False):
             detected = True
             if not terminal_opened:
               terminal_opened = True
@@ -56,29 +56,29 @@ def print_result(result, output_image, timestamp_ms):
           case "Closed_Fist":
             ...
 
-          case ("Thumb_Up", "false"): # volume change without volumebar
+          case ("Thumb_Up", False): # volume change without volumebar
             if get_volume() < 100:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
 
-          case ("Thumb_Down", "false"): # volume change without volumebar
+          case ("Thumb_Down", False): # volume change without volumebar
             if get_volume() > 0:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
 
-          case ("Thumb_Up", "true"): # volume change with volumebar, by larger increments
+          case ("Thumb_Up", True): # volume change with volumebar, by larger increments
             os.system("xdotool key XF86AudioRaiseVolume")
             # TODO: change the increments by which it increase/ decreases
 
-          case ("Thumb_Down", "true"): # volume change with volumebar, by larger increments
+          case ("Thumb_Down", True): # volume change with volumebar, by larger increments
             os.system("xdotool key XF86AudioLowerVolume")
             # TODO: change the increments by which it increase/ decreases
 
-          case ("ILoveYou", "true" | "false"):
+          case ("ILoveYou", True | False):
             detected = True
             if not terminal_opened:
               terminal_opened = True
               os.system('firefox https://www.crunchyroll.com/discover')
           
-          case ("Victory", "true" | "false"):
+          case ("Victory", True | False):
             print("Exiting program via gesture.")
             running = False
             return
@@ -101,7 +101,7 @@ def image_mode():
 
   with GestureRecognizer.create_from_options(options) as recognizer:
     result = recognizer.recognize(mp_image)
-    print_result(result, output_image=..., timestamp_ms=...)
+    print_result(result, output_image=..., timestamp_ms=..., volumebar_bool=...)
 
 def livestream_mode():
   options = GestureRecognizerOptions(
@@ -135,8 +135,25 @@ def livestream_mode():
   cap.release()
   cv2.destroyAllWindows()
 
+def args_to_bool(gui, volumebar):
+  if gui == "true":
+    gui_bool = True
+  else:
+    gui_bool = False
+
+  if volumebar == "true":
+    volumebar_bool = True
+  else:
+    volumebar_bool = False
+
+  return volumebar_bool, gui_bool
+
 if __name__ == "__main__":
-  mode = args.mode
+  mode      = args.mode
+  gui       = args.gui
+  volumebar = args.volumebar
+
+  volumebar_bool, gui_bool = args_to_bool(gui, volumebar)
 
   if mode.lower() == "image":
     image_mode()

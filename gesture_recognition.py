@@ -6,6 +6,7 @@ import time
 import os
 import argparse
 import subprocess
+import re
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
@@ -26,6 +27,9 @@ image_path = "photo_from_2026_03_21_22_51_51.094174.jpeg"
 running         = True 
 terminal_opened = False
 
+def get_volume():
+  output = os.popen("pactl get-sink-volume @DEFAULT_SINK@").read()
+  return int(re.search(r"(\d+)%", output).group(1))
 
 def print_result(result, output_image, timestamp_ms):
   global terminal_opened, running
@@ -52,11 +56,11 @@ def print_result(result, output_image, timestamp_ms):
             ...
 
           case ("Thumb_Up", "false"):
-            if "100%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
+            if get_volume() < 100:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
 
           case ("Thumb_Down", "false"):
-            if "0%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
+            if get_volume() > 0:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
 
           case ("Thumb_Up", "true"):

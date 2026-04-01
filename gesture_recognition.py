@@ -10,9 +10,9 @@ import re
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode", type=str, default="livestream", help="select if you want to be in livestream or image mode")
-parser.add_argument("--gui" , type=str, default="true", help="select if you want a gui visible for livestream mode")
-parser.add_argument("--volumebar" , type=str, default="false", help="select if you want a visible volume bar for livestream mode")
+parser.add_argument("--mode"      , type=str, default="livestream", help="choose between livestream or image mode")
+parser.add_argument("--gui"       , type=str, default="true"      , help="choose visible GUI for livestream mode")
+parser.add_argument("--volumebar" , type=str, default="false"     , help="choose visible volumebar for livestream mode")
 args = parser.parse_args()
 
 BaseOptions              = mp.tasks.BaseOptions
@@ -20,6 +20,7 @@ GestureRecognizer        = mp.tasks.vision.GestureRecognizer
 GestureRecognizerOptions = mp.tasks.vision.GestureRecognizerOptions
 VisionRunningMode        = mp.tasks.vision.RunningMode
 
+# Paths
 model_path = "gesture_recognizer.task"
 image_path = "photo_from_2026_03_21_22_51_51.094174.jpeg"
 
@@ -55,19 +56,21 @@ def print_result(result, output_image, timestamp_ms):
           case "Closed_Fist":
             ...
 
-          case ("Thumb_Up", "false"):
+          case ("Thumb_Up", "false"): # volume change without volumebar
             if get_volume() < 100:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
 
-          case ("Thumb_Down", "false"):
+          case ("Thumb_Down", "false"): # volume change without volumebar
             if get_volume() > 0:
               os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
 
-          case ("Thumb_Up", "true"):
+          case ("Thumb_Up", "true"): # volume change with volumebar, by larger increments
             os.system("xdotool key XF86AudioRaiseVolume")
+            # TODO: change the increments by which it increase/ decreases
 
-          case ("Thumb_Down", "true"):
+          case ("Thumb_Down", "true"): # volume change with volumebar, by larger increments
             os.system("xdotool key XF86AudioLowerVolume")
+            # TODO: change the increments by which it increase/ decreases
 
           case ("ILoveYou", "true" | "false"):
             detected = True
@@ -133,12 +136,12 @@ def livestream_mode():
   cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-  vision_running_mode_selection = args.mode
+  mode = args.mode
 
-  if vision_running_mode_selection.lower() == "image":
+  if mode.lower() == "image":
     image_mode()
   
-  elif vision_running_mode_selection.lower() == "livestream":
+  elif mode.lower() == "livestream":
     livestream_mode()
 
   else:

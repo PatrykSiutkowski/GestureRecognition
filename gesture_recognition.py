@@ -11,6 +11,7 @@ import subprocess
 parser = argparse.ArgumentParser()
 parser.add_argument("--mode", type=str, default="livestream", help="select if you want to be in livestream or image mode")
 parser.add_argument("--gui" , type=str, default="true", help="select if you want a gui visible for livestream mode")
+parser.add_argument("--volumebar" , type=str, default="false", help="select if you want a visible volume bar for livestream mode")
 args = parser.parse_args()
 
 BaseOptions              = mp.tasks.BaseOptions
@@ -25,6 +26,7 @@ image_path = "photo_from_2026_03_21_22_51_51.094174.jpeg"
 running         = True 
 terminal_opened = False
 
+
 def print_result(result, output_image, timestamp_ms):
   global terminal_opened, running
 
@@ -35,9 +37,9 @@ def print_result(result, output_image, timestamp_ms):
       for gesture in gesture_list:
         print(f"{gesture.category_name}")
         
-        match gesture.category_name:
+        match (gesture.category_name, args.volumebar):
             
-          case "Pointing_Up":
+          case ("Pointing_Up", "true" | "false"):
             detected = True
             if not terminal_opened:
               terminal_opened = True
@@ -49,21 +51,27 @@ def print_result(result, output_image, timestamp_ms):
           case "Closed_Fist":
             ...
 
-          case "Thumb_Up":
+          case ("Thumb_Up", "false"):
             if "100%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
               os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
 
-          case "Thumb_Down":
+          case ("Thumb_Down", "false"):
             if "0%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
               os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
 
-          case "ILoveYou":
+          case ("Thumb_Up", "true"):
+            os.system("xdotool key XF86AudioRaiseVolume")
+
+          case ("Thumb_Down", "true"):
+            os.system("xdotool key XF86AudioLowerVolume")
+
+          case ("ILoveYou", "true" | "false"):
+            detected = True
             if not terminal_opened:
-              detected = True
               terminal_opened = True
               os.system('firefox https://www.crunchyroll.com/discover')
           
-          case "Victory":
+          case ("Victory", "true" | "false"):
             print("Exiting program via gesture.")
             running = False
             return

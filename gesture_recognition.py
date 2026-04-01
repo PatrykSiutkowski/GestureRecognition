@@ -50,12 +50,12 @@ def print_result(result, output_image, timestamp_ms):
             ...
 
           case "Thumb_Up":
-            os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
-            #os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            if "100%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
+              os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
 
           case "Thumb_Down":
-            os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
-            #os.system('pactl get-sink-volume @DEFAULT_SINK@')
+            if "0%" not in os.popen("pactl get-sink-volume @DEFAULT_SINK@").read():
+              os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
 
           case "ILoveYou":
             if not terminal_opened:

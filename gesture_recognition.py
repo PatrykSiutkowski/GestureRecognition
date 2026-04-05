@@ -33,7 +33,7 @@ def get_volume():
   return int(re.search(r"(\d+)%", output).group(1))
 
 def print_result(result, output_image, timestamp_ms):
-  global terminal_opened, running
+  global terminal_opened, running, gui_bool
 
   detected = False
 
@@ -48,8 +48,8 @@ def print_result(result, output_image, timestamp_ms):
             detected = True
             if not terminal_opened:
               terminal_opened = True
-              os.system('firefox https://www.youtube.com/')
-          
+              gui_bool = not gui_bool
+
           case "Open_Palm":
             ...  
 
@@ -128,7 +128,9 @@ def livestream_mode():
       
       if gui_bool == True:
         cv2.imshow("Gesture Recognition", frame) # Show camera feed
-
+      else:
+        cv2.destroyAllWindows()
+      
       if cv2.waitKey(1) & 0xFF == 27:  # exit using ESC key
         break
 

@@ -76,7 +76,7 @@ def print_result(result, output_image, timestamp_ms):
             detected = True
             if not terminal_opened:
               terminal_opened = True
-              os.system('firefox https://www.crunchyroll.com/discover')
+              os.system('systemctl suspend')
           
           case ("Victory", True | False):
             print("Exiting program via gesture.")

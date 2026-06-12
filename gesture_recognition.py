@@ -3,7 +3,6 @@
 import mediapipe as mp
 import cv2
 import time
-import os
 import argparse
 import subprocess
 import re
@@ -29,8 +28,14 @@ running         = True
 terminal_opened = False
 
 def get_volume():
-  output = os.popen("pactl get-sink-volume @DEFAULT_SINK@").read()
-  return int(re.search(r"(\d+)%", output).group(1))
+    result = subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'], capture_output=True, text=True)
+    output = result.stdout
+    
+    match = re.search(r"(\d+)%", output)
+    if match:
+      return int(match.group(1))
+    
+    return 0  # Fallback safety return if no volume is found
 
 def print_result(result, output_image, timestamp_ms):
   global terminal_opened, running, gui_bool
@@ -58,25 +63,28 @@ def print_result(result, output_image, timestamp_ms):
 
           case ("Thumb_Up", False): # volume change without volumebar
             if get_volume() < 100:
-              os.system('pactl set-sink-volume @DEFAULT_SINK@ +2%; pactl get-sink-volume @DEFAULT_SINK@' )
-
+              subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+2%'])
+              subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'])          
+          
           case ("Thumb_Down", False): # volume change without volumebar
             if get_volume() > 0:
-              os.system('pactl set-sink-volume @DEFAULT_SINK@ -2%; pactl get-sink-volume @DEFAULT_SINK@')
-
+              subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '-2%'])
+              subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'])
+          
           case ("Thumb_Up", True): # volume change with volumebar, by larger increments
-            os.system("xdotool key XF86AudioRaiseVolume")
+            subprocess.run('xdotool key XF86AudioRaiseVolume',shell=True)
             # TODO: change the increments by which it increase/ decreases
 
           case ("Thumb_Down", True): # volume change with volumebar, by larger increments
-            os.system("xdotool key XF86AudioLowerVolume")
+            subprocess.run('xdotool key XF86AudioLowerVolume',shell=True)
+
             # TODO: change the increments by which it increase/ decreases
 
           case ("ILoveYou", True | False):
             detected = True
             if not terminal_opened:
               terminal_opened = True
-              os.system('systemctl suspend')
+              subprocess.run('systemctl suspend', shell=True)
           
           case ("Victory", True | False):
             print("Exiting program via gesture.")

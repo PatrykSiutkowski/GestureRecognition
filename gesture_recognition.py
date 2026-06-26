@@ -58,11 +58,11 @@ def print_result(result, output_image, timestamp_ms):
               terminal_opened = True
               gui_bool = not gui_bool
 
-          case "Open_Palm":
-            ...  
+          case ("Open_Palm", True | False):
+            subprocess.run(['brightnessctl', 'set', '10%+'])
 
-          case "Closed_Fist":
-            ...
+          case ("Closed_Fist", True | False):
+            subprocess.run(['brightnessctl', 'set', '10%-'], capture_output=True,text=True)
 
           case ("Thumb_Up", False): # volume change without volumebar
             if get_volume() < 100:
@@ -95,7 +95,7 @@ def print_result(result, output_image, timestamp_ms):
             return
 
           case "None":
-            ...
+            pass
 
   if not detected:
     terminal_opened = False

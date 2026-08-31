@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from unittest import result
+
 import mediapipe as mp
 import cv2
 import time
@@ -9,12 +11,13 @@ import re
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode"      , type=str, default="livestream", help="choose between livestream or image mode")
-parser.add_argument("--gui"       , type=str, default="true"      , help="choose visible GUI for livestream mode")
-parser.add_argument("--volumebar" , type=str, default="false"     , help="choose visible volumebar for livestream mode")
-parser.add_argument("--printgest" , type=str, default="true"      , help="choose visible volumebar for livestream mode")
+parser.add_argument("--mode"     , type=str, default="livestream", help="choose between livestream or image mode")
+parser.add_argument("--gui"      , type=str, default="true"      , help="choose visible GUI for livestream mode")
+parser.add_argument("--volumebar", type=str, default="false"     , help="choose visible volumebar for livestream mode")
+parser.add_argument("--printgest", type=str, default="true"      , help="choose visible volumebar for livestream mode")
 args = parser.parse_args()
 
+# MediaPipe Tasks
 BaseOptions              = mp.tasks.BaseOptions
 GestureRecognizer        = mp.tasks.vision.GestureRecognizer
 GestureRecognizerOptions = mp.tasks.vision.GestureRecognizerOptions
@@ -28,16 +31,19 @@ image_path = "photo_from_2026_03_21_22_51_51.094174.jpeg"
 running         = True 
 terminal_opened = False
 
+# Get current volume level using pactl
 def get_volume():
     result = subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'], capture_output=True, text=True)
     output = result.stdout
     
     match = re.search(r"(\d+)%", output)
     if match:
+      print(f"Current volume: {match.group(1)}%")
       return int(match.group(1))
     
     return 0  # Fallback safety return if no volume is found
 
+# Print the result of gesture recognition and perform actions based on detected gestures
 def print_result(result, output_image, timestamp_ms):
   global terminal_opened, running, gui_bool
 
@@ -49,60 +55,87 @@ def print_result(result, output_image, timestamp_ms):
         
         if printgest_bool == True: 
           print(f"{gesture.category_name}")
-        
-        match (gesture.category_name, volumebar_bool):
-            
-          case ("Pointing_Up", True | False):
-            detected = True
-            if not terminal_opened:
-              terminal_opened = True
-              gui_bool = not gui_bool
 
-          case ("Open_Palm", True | False):
-            subprocess.run(['brightnessctl', 'set', '10%+'])
-
-          case ("Closed_Fist", True | False):
-            subprocess.run(['brightnessctl', 'set', '10%-'], capture_output=True,text=True)
-
-          case ("Thumb_Up", False): # volume change without volumebar
-            if get_volume() < 100:
-              subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+2%'])
-              subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'])          
-          
-          case ("Thumb_Down", False): # volume change without volumebar
-            if get_volume() > 0:
-              subprocess.run(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '-2%'])
-              subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'])
-          
-          case ("Thumb_Up", True): # volume change with volumebar, by larger increments
-            subprocess.run('xdotool key XF86AudioRaiseVolume',shell=True)
-            # TODO: change the increments by which it increase/ decreases
-
-          case ("Thumb_Down", True): # volume change with volumebar, by larger increments
-            subprocess.run('xdotool key XF86AudioLowerVolume',shell=True)
-
-            # TODO: change the increments by which it increase/ decreases
-
-          case ("ILoveYou", True | False):
-            detected = True
-            if not terminal_opened:
-              terminal_opened = True
-              subprocess.run('systemctl suspend', shell=True)
-          
-          case ("Victory", True | False):
-            print("Exiting program via gesture.")
-            running = False
-            return
-
-          case "None":
-            pass
-
-  if not detected:
+  elif not detected:
     terminal_opened = False
 
   else:
     print("No gestures detected")
 
+# Match detected gestures with corresponding actions
+def match_gesture(result, output_image, timestamp_ms):
+    global terminal_opened, running, gui_bool, detected, volumebar_bool
+
+    # No gesture detected
+    if not result.gestures or not result.gestures[0]:
+        return
+
+    # Get the first detected gesture
+    gesture = result.gestures[0][0].category_name
+    print_result(result, output_image, timestamp_ms)
+
+
+    match (gesture, volumebar_bool):
+        case ("Pointing_Up", True | False):
+            detected = True
+
+            if not terminal_opened:
+                terminal_opened = True
+                gui_bool = not gui_bool
+
+        case ("Open_Palm", True | False):
+            subprocess.run([
+                'brightnessctl',
+                'set',
+                '10%+'
+            ])
+
+        case ("Closed_Fist", True | False):
+            subprocess.run([
+                'brightnessctl',
+                'set',
+                '10%-'
+            ], capture_output=True, text=True)
+
+        case ("Thumb_Up", True | False):
+            # Volume change without volume bar
+            if get_volume() < 100:
+                subprocess.run([
+                    'pactl',
+                    'set-sink-volume',
+                    '@DEFAULT_SINK@',
+                    '+2%'
+                  ])
+
+        case ("Thumb_Down", True | False):
+            # Volume change without volume bar
+            if get_volume() > 0:
+                subprocess.run([
+                    'pactl',
+                    'set-sink-volume',
+                    '@DEFAULT_SINK@',
+                    '-2%',
+                ])
+
+        case ("ILoveYou", True | False):
+            detected = True
+
+            if not terminal_opened:
+                terminal_opened = True
+                subprocess.run(
+                    'systemctl suspend',
+                    shell=True
+                )
+
+        case ("Victory", True | False):
+            print("Exiting program via gesture.")
+            running = False
+            return
+
+        case ("None", True | False):
+            pass
+
+# Recognize gestures in image mode
 def image_mode():
   mp_image = mp.Image.create_from_file(image_path)
     
@@ -114,11 +147,12 @@ def image_mode():
     result = recognizer.recognize(mp_image)
     print_result(result, output_image=..., timestamp_ms=..., volumebar_bool=...)
 
+# Recognize gestures in livestream mode
 def livestream_mode():
   options = GestureRecognizerOptions(
     base_options=BaseOptions(model_asset_path=model_path),
     running_mode=VisionRunningMode.LIVE_STREAM,
-    result_callback=print_result)
+    result_callback=match_gesture)
 
   cap = cv2.VideoCapture(0)
 
@@ -148,6 +182,7 @@ def livestream_mode():
   cap.release()
   cv2.destroyAllWindows()
 
+# Convert string arguments to boolean values
 def args_to_bool(gui, volumebar, printgest):
   if gui == "true":
     gui_bool = True

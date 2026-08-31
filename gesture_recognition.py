@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from unittest import result
-
 import mediapipe as mp
 import cv2
 import time
@@ -44,7 +42,7 @@ def get_volume():
     return 0  # Fallback safety return if no volume is found
 
 # Print the result of gesture recognition and perform actions based on detected gestures
-def print_result(result, output_image, timestamp_ms):
+def print_result(result):
   global terminal_opened, running, gui_bool
 
   detected = False
@@ -72,7 +70,7 @@ def match_gesture(result, output_image, timestamp_ms):
 
     # Get the first detected gesture
     gesture = result.gestures[0][0].category_name
-    print_result(result, output_image, timestamp_ms)
+    print_result(result)
 
 
     match (gesture, volumebar_bool):
@@ -135,18 +133,6 @@ def match_gesture(result, output_image, timestamp_ms):
         case ("None", True | False):
             pass
 
-# Recognize gestures in image mode
-def image_mode():
-  mp_image = mp.Image.create_from_file(image_path)
-    
-  options = GestureRecognizerOptions(
-    base_options=BaseOptions(model_asset_path=model_path),
-    running_mode=VisionRunningMode.IMAGE)
-
-  with GestureRecognizer.create_from_options(options) as recognizer:
-    result = recognizer.recognize(mp_image)
-    print_result(result, output_image=..., timestamp_ms=..., volumebar_bool=...)
-
 # Recognize gestures in livestream mode
 def livestream_mode():
   options = GestureRecognizerOptions(
@@ -208,11 +194,8 @@ if __name__ == "__main__":
   printgest = args.printgest
 
   volumebar_bool, gui_bool, printgest_bool = args_to_bool(gui, volumebar, printgest)
-
-  if mode.lower() == "image":
-    image_mode()
   
-  elif mode.lower() == "livestream":
+  if mode.lower() == "livestream":
     livestream_mode()
 
   else:

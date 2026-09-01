@@ -41,7 +41,15 @@ def get_volume():
   
   return 0  # Fallback safety return if no volume is found
 
-
+def get_brightness():
+  result = subprocess.run(['brightnessctl', 'get'], capture_output=True, text=True)
+  output = result.stdout.strip()
+  
+  if output.isdigit():
+    print(f"Current brightness: {output}")
+    return int(output)
+  
+  return 0  # Fallback safety return if no brightness is found
 
 
 # Print the result of gesture recognition and perform actions based on detected gestures
@@ -85,18 +93,24 @@ def match_gesture(result, output_image, timestamp_ms):
                 gui_bool = not gui_bool
 
         case ("Open_Palm", True | False):
-            subprocess.run([
-                'brightnessctl',
-                'set',
-                '10%+'
-            ])
+          # if get_brightness() < 100:
+          #   subprocess.run([
+          #       'brightnessctl',
+          #       'set',
+          #       '10%+'
+          #   ])
+          subprocess.run(['ddcutil', 'setvcp', '10', '+', '10'], capture_output=True, text=True)
 
         case ("Closed_Fist", True | False):
-            subprocess.run([
-                'brightnessctl',
-                'set',
-                '10%-'
-            ], capture_output=True, text=True)
+            #if get_brightness() > 0:
+                # subprocess.run([
+                #   'brightnessctl',
+                #   'set',
+                #   '10%-'], 
+                #   capture_output=True, text=True)
+
+                subprocess.run(['ddcutil', 'setvcp', '10', '-', '10'], capture_output=True, text=True)
+
 
         case ("Thumb_Up", True | False):
             # Volume change without volume bar

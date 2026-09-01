@@ -6,6 +6,7 @@ import time
 import argparse
 import subprocess
 import re
+import time
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
@@ -51,6 +52,18 @@ def get_brightness():
   
   return 0  # Fallback safety return if no brightness is found
 
+def get_internal_monitor():
+  get_internal_monitor_status = subprocess.run(['xrandr', '--listmonitors'], capture_output=True, text=True)
+  for line in get_internal_monitor_status.splitlines():
+    if line.startswith(' '):
+      parts = line.split()
+      print(parts[-1])
+
+  if parts == "HDMI-1" or parts == "DP-1" or parts == "DP-2":
+    return False  # Return False if the monitor is external
+
+  else:
+    return True  # Return True if the monitor is internal
 
 # Print the result of gesture recognition and perform actions based on detected gestures
 def print_result(result):
@@ -85,69 +98,69 @@ def match_gesture(result, output_image, timestamp_ms):
 
 
     match (gesture, volumebar_bool):
-        case ("Pointing_Up", True | False):
-            detected = True
+      case ("Pointing_Up", True | False):
+          detected = True
 
-            if not terminal_opened:
-                terminal_opened = True
-                gui_bool = not gui_bool
+          if not terminal_opened:
+            terminal_opened = True
+            gui_bool = not gui_bool
 
-        case ("Open_Palm", True | False):
-          # if get_brightness() < 100:
-          #   subprocess.run([
-          #       'brightnessctl',
-          #       'set',
-          #       '10%+'
-          #   ])
-          subprocess.run(['ddcutil', 'setvcp', '10', '+', '10'], capture_output=True, text=True)
+      case ("Open_Palm", True | False):
+        if get_internal_monitor() == True and get_brightness() < 100:
+            subprocess.run([
+            'brightnessctl',
+            'set',
+            '10%+'])
+        
+        else:
+          subprocess.run(['ddcutil', 'setvcp', '10', '+', '2'], capture_output=True, text=True)
 
-        case ("Closed_Fist", True | False):
-            #if get_brightness() > 0:
-                # subprocess.run([
-                #   'brightnessctl',
-                #   'set',
-                #   '10%-'], 
-                #   capture_output=True, text=True)
+      case ("Closed_Fist", True | False):
+        if get_internal_monitor() == True and get_brightness() > 0:
+          subprocess.run([
+          'brightnessctl',
+          'set',
+          '10%-'])
 
-                subprocess.run(['ddcutil', 'setvcp', '10', '-', '10'], capture_output=True, text=True)
+        else:
+          subprocess.run(['ddcutil', 'setvcp', '10', '-', '2'], capture_output=True, text=True)
 
-
-        case ("Thumb_Up", True | False):
-            # Volume change without volume bar
-            if get_volume() < 100:
-                subprocess.run([
-                    'pactl',
-                    'set-sink-volume',
-                    '@DEFAULT_SINK@',
-                    '+2%'
-                  ])
-
-        case ("Thumb_Down", True | False):
-            # Volume change without volume bar
-            if get_volume() > 0:
-                subprocess.run([
-                    'pactl',
-                    'set-sink-volume',
-                    '@DEFAULT_SINK@',
-                    '-2%',
+      case ("Thumb_Up", True | False):
+          # Volume change without volume bar
+          if get_volume() < 100:
+              subprocess.run([
+                  'pactl',
+                  'set-sink-volume',
+                  '@DEFAULT_SINK@',
+                  '+2%'
                 ])
 
-        case ("ILoveYou", True | False):
-            detected = True
+      case ("Thumb_Down", True | False):
+          # Volume change without volume bar
+          if get_volume() > 0:
+              subprocess.run([
+                  'pactl',
+                  'set-sink-volume',
+                  '@DEFAULT_SINK@',
+                  '-2%',
+              ])
 
-            if not terminal_opened:
-                terminal_opened = True
-                subprocess.run(
-                    'systemctl suspend',
-                    shell=True
-                )
+      case ("ILoveYou", True | False):
+          detected = True
 
-        case ("Victory", True | False):
-            print("Exiting program via gesture.")
-            running = False
-            return
+          if not terminal_opened:
+              terminal_opened = True
+              subprocess.run(
+                  'systemctl suspend',
+                  shell=True
+              )
 
-        case ("None", True | False):
+      case ("Victory", True | False):
+          print("Exiting program via gesture.")
+          running = False
+          return
+
+      case ("None", True | False):
             pass
 
 # Recognize gestures in livestream mode
@@ -232,7 +245,12 @@ if __name__ == "__main__":
   volumebar_bool, gui_bool, printgest_bool = args_to_bool(gui, volumebar, printgest)
   
   if mode.lower() == "livestream":
-    livestream_mode()
+    last_brightness_change = 0
+    brightness_cooldown = 0.5
+    current_time = time.time()
+
+    if current_time - last_brightness_change >= brightness_cooldown:
+      livestream_mode()
 
   else:
     raise TypeError("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args

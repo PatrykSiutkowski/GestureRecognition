@@ -104,6 +104,9 @@ def match_gesture(result, output_image, timestamp_ms):
         terminal_opened = True
         gui_bool = not gui_bool
 
+    # TODO:
+    # 1. Implement a more efficient way to handle brightness changes for external monitors
+    # 2. Implement brightness control for mixed setups (internal + external monitors)
     case ("Open_Palm", True | False):
       if get_external_monitor() == True and get_brightness() < 100:
         subprocess.run(['brightnessctl', 'set', '10%+'])

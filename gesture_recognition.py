@@ -54,16 +54,16 @@ def get_brightness():
 
 def get_internal_monitor():
   get_internal_monitor_status = subprocess.run(['xrandr', '--listmonitors'], capture_output=True, text=True)
-  for line in get_internal_monitor_status.splitlines():
+  for line in get_internal_monitor_status.stdout.splitlines():
     if line.startswith(' '):
       parts = line.split()
       print(parts[-1])
 
   if parts == "HDMI-1" or parts == "DP-1" or parts == "DP-2":
-    return False  # Return False if the monitor is external
+    return False # Return False if the monitor is external
 
   else:
-    return True  # Return True if the monitor is internal
+    return True # Return True if the monitor is internal
 
 # Print the result of gesture recognition and perform actions based on detected gestures
 def print_result(result):
@@ -85,83 +85,68 @@ def print_result(result):
     print("No gestures detected")
 
 # Match detected gestures with corresponding actions
-def match_gesture(result, output_image, timestamp_ms):
-    global terminal_opened, running, gui_bool, detected, volumebar_bool
+def match_gesture(result, output_image, timestamp_ms):  
+  global terminal_opened, running, gui_bool, detected, volumebar_bool, num_of_monitors
 
-    # No gesture detected
-    if not result.gestures or not result.gestures[0]:
+
+
+  # No gesture detected
+  if not result.gestures or not result.gestures[0]:
+    return
+
+  # Get the first detected gesture
+  gesture = result.gestures[0][0].category_name
+  print_result(result)
+
+
+  match (gesture, volumebar_bool):
+    case ("Pointing_Up", True | False):
+      detected = True
+
+      if not terminal_opened:
+        terminal_opened = True
+        gui_bool = not gui_bool
+
+    case ("Open_Palm", True | False):
+      if get_internal_monitor() == True and get_brightness() < 100:
+        subprocess.run(['brightnessctl', 'set', '10%+'])
+      
+      else:
+        for monitor in range(int(num_of_monitors)):
+          subprocess.run(['ddcutil', '-d', str(monitor + 1), 'setvcp', '10', '+', '2'], capture_output=True, text=True)
+
+    case ("Closed_Fist", True | False):
+      if get_internal_monitor() == True and get_brightness() > 0:
+        subprocess.run(['brightnessctl', 'set', '10%-'])
+
+      else:
+        for monitor in range(int(num_of_monitors)):
+          subprocess.run(['ddcutil', '-d', str(monitor + 1), 'setvcp', '10', '-', '2'], capture_output=True, text=True)
+
+    case ("Thumb_Up", True | False):
+      # Volume change without volume bar
+      if get_volume() < 100:
+          subprocess.run(['pactl','set-sink-volume','@DEFAULT_SINK@','+2%'])
+
+    case ("Thumb_Down", True | False):
+      # Volume change without volume bar
+      if get_volume() > 0:
+        subprocess.run(['pactl','set-sink-volume','@DEFAULT_SINK@','-2%',])
+
+    case ("ILoveYou", True | False):
+      detected = True
+
+      if not terminal_opened:
+        terminal_opened = True
+        subprocess.run('systemctl suspend',shell=True)
+
+    case ("Victory", True | False):
+      print("Exiting program via gesture.")
+      running = False
       return
 
-    # Get the first detected gesture
-    gesture = result.gestures[0][0].category_name
-    print_result(result)
-
-
-    match (gesture, volumebar_bool):
-      case ("Pointing_Up", True | False):
-          detected = True
-
-          if not terminal_opened:
-            terminal_opened = True
-            gui_bool = not gui_bool
-
-      case ("Open_Palm", True | False):
-        if get_internal_monitor() == True and get_brightness() < 100:
-            subprocess.run([
-            'brightnessctl',
-            'set',
-            '10%+'])
-        
-        else:
-          subprocess.run(['ddcutil', 'setvcp', '10', '+', '2'], capture_output=True, text=True)
-
-      case ("Closed_Fist", True | False):
-        if get_internal_monitor() == True and get_brightness() > 0:
-          subprocess.run([
-          'brightnessctl',
-          'set',
-          '10%-'])
-
-        else:
-          subprocess.run(['ddcutil', 'setvcp', '10', '-', '2'], capture_output=True, text=True)
-
-      case ("Thumb_Up", True | False):
-          # Volume change without volume bar
-          if get_volume() < 100:
-              subprocess.run([
-                  'pactl',
-                  'set-sink-volume',
-                  '@DEFAULT_SINK@',
-                  '+2%'
-                ])
-
-      case ("Thumb_Down", True | False):
-          # Volume change without volume bar
-          if get_volume() > 0:
-              subprocess.run([
-                  'pactl',
-                  'set-sink-volume',
-                  '@DEFAULT_SINK@',
-                  '-2%',
-              ])
-
-      case ("ILoveYou", True | False):
-          detected = True
-
-          if not terminal_opened:
-              terminal_opened = True
-              subprocess.run(
-                  'systemctl suspend',
-                  shell=True
-              )
-
-      case ("Victory", True | False):
-          print("Exiting program via gesture.")
-          running = False
-          return
-
-      case ("None", True | False):
-            pass
+    case ("None", True | False):
+      pass
 
 # Recognize gestures in livestream mode
 def livestream_mode():
@@ -189,7 +174,7 @@ def livestream_mode():
       test_cap.release()
 
   if cap is None:
-      raise RuntimeError("No working camera found")
+    raise RuntimeError("No working camera found")
 
   with GestureRecognizer.create_from_options(options) as recognizer:
     while cap.isOpened() and running:
@@ -236,6 +221,16 @@ def args_to_bool(gui, volumebar, printgest):
 
   return volumebar_bool, gui_bool, printgest_bool
 
+def get_num_of_monitors():
+  result = subprocess.run(
+    ['ddcutil', 'detect'],
+    capture_output=True,
+    text=True
+  )
+
+  num_of_monitors = len(re.findall(r'^Display \d+', result.stdout, re.MULTILINE))
+  return num_of_monitors
+
 if __name__ == "__main__":
   mode      = args.mode
   gui       = args.gui
@@ -243,14 +238,6 @@ if __name__ == "__main__":
   printgest = args.printgest
 
   volumebar_bool, gui_bool, printgest_bool = args_to_bool(gui, volumebar, printgest)
-  
-  if mode.lower() == "livestream":
-    last_brightness_change = 0
-    brightness_cooldown = 0.5
-    current_time = time.time()
+  num_of_monitors = get_num_of_monitors()
 
-    if current_time - last_brightness_change >= brightness_cooldown:
-      livestream_mode()
-
-  else:
-    raise TypeError("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args
+  livestream_mode()

@@ -52,18 +52,18 @@ def get_brightness():
   
   return 0  # Fallback safety return if no brightness is found
 
-def get_internal_monitor():
+def get_external_monitor():
   get_internal_monitor_status = subprocess.run(['xrandr', '--listmonitors'], capture_output=True, text=True)
   for line in get_internal_monitor_status.stdout.splitlines():
     if line.startswith(' '):
       parts = line.split()
       print(parts[-1])
 
-  if parts.startswith("HDMI-") or parts.startswith("DP-"):
-    return False # Return False if the monitor is external
+  if parts[0].startswith(("HDMI-", "DP-")):
+    return True # Return True if the monitor is external
 
   else:
-    return True # Return True if the monitor is internal
+    pass
 
 # Print the result of gesture recognition and perform actions based on detected gestures
 def print_result(result):
@@ -87,7 +87,7 @@ def print_result(result):
 # Match detected gestures with corresponding actions
 def match_gesture(result, output_image, timestamp_ms):  
   global terminal_opened, running, gui_bool, detected, volumebar_bool, num_of_monitors
-  
+
   # No gesture detected
   if not result.gestures or not result.gestures[0]:
     return
@@ -95,7 +95,6 @@ def match_gesture(result, output_image, timestamp_ms):
   # Get the first detected gesture
   gesture = result.gestures[0][0].category_name
   print_result(result)
-
 
   match (gesture, volumebar_bool):
     case ("Pointing_Up", True | False):
@@ -106,7 +105,7 @@ def match_gesture(result, output_image, timestamp_ms):
         gui_bool = not gui_bool
 
     case ("Open_Palm", True | False):
-      if get_internal_monitor() == True and get_brightness() < 100:
+      if get_external_monitor() == True and get_brightness() < 100:
         subprocess.run(['brightnessctl', 'set', '10%+'])
       
       else:
@@ -114,7 +113,7 @@ def match_gesture(result, output_image, timestamp_ms):
           subprocess.run(['ddcutil', '-d', str(monitor + 1), 'setvcp', '10', '+', '2'], capture_output=True, text=True)
 
     case ("Closed_Fist", True | False):
-      if get_internal_monitor() == True and get_brightness() > 0:
+      if get_external_monitor() == True and get_brightness() > 0:
         subprocess.run(['brightnessctl', 'set', '10%-'])
 
       else:

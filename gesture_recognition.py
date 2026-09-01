@@ -140,7 +140,26 @@ def livestream_mode():
     running_mode=VisionRunningMode.LIVE_STREAM,
     result_callback=match_gesture)
 
-  cap = cv2.VideoCapture(0)
+
+  # Alternative camera indices to try if the default camera is not available
+  camera_indices = [0, 1, 2]
+  cap = None
+
+  for index in camera_indices:
+    test_cap = cv2.VideoCapture(index)
+
+    if test_cap.isOpened():
+      ret, frame = test_cap.read()
+
+      if ret:
+        cap = test_cap
+        print(f"Using camera {index}")
+        break
+
+      test_cap.release()
+
+  if cap is None:
+      raise RuntimeError("No working camera found")
 
   with GestureRecognizer.create_from_options(options) as recognizer:
     while cap.isOpened() and running:

@@ -31,15 +31,18 @@ terminal_opened = False
 
 # Get current volume level using pactl
 def get_volume():
-    result = subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'], capture_output=True, text=True)
-    output = result.stdout
-    
-    match = re.search(r"(\d+)%", output)
-    if match:
-      print(f"Current volume: {match.group(1)}%")
-      return int(match.group(1))
-    
-    return 0  # Fallback safety return if no volume is found
+  result = subprocess.run(['pactl', 'get-sink-volume', '@DEFAULT_SINK@'], capture_output=True, text=True)
+  output = result.stdout
+  
+  match = re.search(r"(\d+)%", output)
+  if match:
+    print(f"Current volume: {match.group(1)}%")
+    return int(match.group(1))
+  
+  return 0  # Fallback safety return if no volume is found
+
+
+
 
 # Print the result of gesture recognition and perform actions based on detected gestures
 def print_result(result):
@@ -66,7 +69,7 @@ def match_gesture(result, output_image, timestamp_ms):
 
     # No gesture detected
     if not result.gestures or not result.gestures[0]:
-        return
+      return
 
     # Get the first detected gesture
     gesture = result.gestures[0][0].category_name
@@ -218,4 +221,4 @@ if __name__ == "__main__":
     livestream_mode()
 
   else:
-    print("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args
+    raise TypeError("Invalid mode selected, rerun and enter either: \"image\" or \"livestream\"") # Handling for invalid args

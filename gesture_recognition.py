@@ -10,7 +10,6 @@ import time
 
 # Argument Parsing
 parser = argparse.ArgumentParser()
-parser.add_argument("--mode"     , type=str, default="livestream", help="choose between livestream or image mode")
 parser.add_argument("--gui"      , type=str, default="true"      , help="choose visible GUI for livestream mode")
 parser.add_argument("--volumebar", type=str, default="false"     , help="choose visible volumebar for livestream mode")
 parser.add_argument("--printgest", type=str, default="true"      , help="choose visible volumebar for livestream mode")
@@ -232,7 +231,6 @@ def get_num_of_monitors():
   return num_of_monitors
 
 if __name__ == "__main__":
-  mode      = args.mode
   gui       = args.gui
   volumebar = args.volumebar
   printgest = args.printgest

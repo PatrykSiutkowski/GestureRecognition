@@ -59,7 +59,7 @@ def get_internal_monitor():
       parts = line.split()
       print(parts[-1])
 
-  if parts == "HDMI-1" or parts == "DP-1" or parts == "DP-2":
+  if parts.startswith("HDMI-") or parts.startswith("DP-"):
     return False # Return False if the monitor is external
 
   else:
@@ -87,9 +87,7 @@ def print_result(result):
 # Match detected gestures with corresponding actions
 def match_gesture(result, output_image, timestamp_ms):  
   global terminal_opened, running, gui_bool, detected, volumebar_bool, num_of_monitors
-
-
-
+  
   # No gesture detected
   if not result.gestures or not result.gestures[0]:
     return

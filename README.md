@@ -3,33 +3,35 @@
 ## by: Patryk Siutkowski
 
 ### About:
-This is a basic gesture recogniser using the media pipeline from [google](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer/python)
+A basic gesture recogniser using the media pipeline to control actions on a Linux based system.
+Specfically: volume, brightness and suspend mode
 
 ## Description of the Algorithm
 
 ### `get_volume`
 
-fetches current volume level and trims output down to the number itself.
+Fetches current volume level and trims output down to the number itself.
+
+### `get_brightness`
+
+Gets the current brightness level
+
+### `get_external_monitor`
+
+Checks if there are internal or external monitors
 
 ### `print_result`
 
-prints result of gesture recognition to terminal
-And has match case for gestures
+Outputs the detected gesture
 
-### `image_mode`
+### `match_gesture`
 
-sets gesture recognition mode to image.
+Matches gesture via match case
 
 ### `livestream_mode`
 
-sets gesture recognition mode to livestream.
+Implements the livestream mode of mediapipe 
 
 ### `args_to_bool`
 
 Converts the true and false args from str to bool
-
-## Exemplar Commands
-
-```terminal
-python gesture_recognition.py
-```
